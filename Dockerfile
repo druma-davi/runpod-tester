@@ -1,29 +1,28 @@
-# 1. Usar a imagem oficial do RunPod (já vem com Python 3.10 e CUDA 12.1 instalados)
-# Isso é MUITO mais rápido que usar python:3.9-slim e tentar instalar drivers manualmente.
+# Use a imagem oficial do RunPod com Python 3.10 e CUDA (essencial para GPU)
 FROM runpod/pytorch:2.2.1-py3.10-cuda12.1.1-devel-ubuntu22.04
 
 # Define o diretório de trabalho
 WORKDIR /app
 
-# 2. Copia o requirements primeiro para aproveitar o cache do Docker
-COPY requirements.txt .
+# Define a pasta de cache DENTRO da imagem para evitar erros de espaço em disco
+# e garantir que o modelo pré-baixado seja encontrado.
+ENV HF_HOME="/app/model_cache"
 
-# Atualiza o pip e instala as dependências
+# Copia e instala as dependências
+COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# 3. PRE-DOWNLOAD DO MODELO (Sua solicitação)
-# Isso baixa o Qwen2.5-3B para dentro da imagem durante o build.
-# Assim, o container inicia instantaneamente sem baixar nada.
+# --- PRE-DOWNLOAD DO MODELO (COM O FIX 'trust_remote_code') ---
+# Baixa o modelo durante o build para que o servidor inicie instantaneamente.
 RUN python -c "from transformers import AutoModelForCausalLM, AutoTokenizer; \
     model_id = 'Qwen/Qwen3-4B-Thinking-2507'; \
-    AutoTokenizer.from_pretrained(model_id); \
-    AutoModelForCausalLM.from_pretrained(model_id)"
+    AutoTokenizer.from_pretrained(model_id, trust_remote_code=True); \
+    AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True)"
 
-# 4. Copia o código da aplicação (seu script python atualizado)
-# Certifique-se de que o nome do arquivo aqui corresponda ao seu arquivo (ex: handler.py)
+# Copia o código da aplicação para o container
 COPY sentiment_analysis.py .
 
-# 5. Comando de execução
-# O flag "-u" é importante para ver os logs em tempo real no RunPod
+# Comando para iniciar a aplicação quando o container rodar
+# O "-u" é para os logs aparecerem em tempo real no RunPod
 CMD ["python", "-u", "sentiment_analysis.py"]
