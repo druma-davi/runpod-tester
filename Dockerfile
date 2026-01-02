@@ -22,7 +22,7 @@ RUN python -c "from transformers import AutoModelForCausalLM, AutoTokenizer; \
 
 # 4. Copia o código da aplicação (seu script python atualizado)
 # Certifique-se de que o nome do arquivo aqui corresponda ao seu arquivo (ex: handler.py)
-COPY handler.py .
+COPY sentiment_analysis.py .
 
 # 5. Comando de execução
 # O flag "-u" é importante para ver os logs em tempo real no RunPod
