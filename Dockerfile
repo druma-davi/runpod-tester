@@ -26,4 +26,4 @@ COPY handler.py .
 
 # 5. Comando de execução
 # O flag "-u" é importante para ver os logs em tempo real no RunPod
-CMD ["python", "-u", "handler.py"]
+CMD ["python", "-u", "sentiment_analysis.py"]
