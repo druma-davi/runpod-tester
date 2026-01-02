@@ -1,0 +1,6 @@
+runpod
+torch
+transformers
+accelerate
+bitsandbytes
+scipy
