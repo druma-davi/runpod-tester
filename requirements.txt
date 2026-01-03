@@ -1,9 +1,10 @@
 runpod
 torch
-transformers
+transformers>=4.39.0
 accelerate
 bitsandbytes
 scipy
 tiktoken
 einops
-transformers-stream-generator
+protobuf
+sentencepiece
