@@ -1,10 +1,14 @@
 runpod
-torch
-transformers>=4.39.0
-accelerate
-bitsandbytes
-scipy
-tiktoken
+# Forçamos as versões mais recentes para suporte ao Qwen 3
+transformers>=4.48.0
+accelerate>=1.2.0
+bitsandbytes>=0.45.0
+torch>=2.4.0
+# Dependências que o modelo Qwen3 tenta importar via 'remote code'
 einops
-protobuf
+tiktoken
 sentencepiece
+protobuf
+transformers_stream_generator
+# Necessário para modelos 'Thinking' de 2025/2026
+vllm>=0.6.0

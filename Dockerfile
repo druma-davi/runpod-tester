@@ -1,29 +1,32 @@
-# Usa a imagem oficial do RunPod que já tem CUDA e Python 3.10
-# (Muito melhor que python:3.9-slim para IA)
+# Imagem base com CUDA 12+ para suportar as otimizações do Qwen 3
 FROM runpod/pytorch:2.2.1-py3.10-cuda12.1.1-devel-ubuntu22.04
 
-# Define o diretório de trabalho
 WORKDIR /app
 
-# --- CRÍTICO: Define o cache na pasta app para não estourar o disco do sistema ---
-ENV HF_HOME="/app/model_cache"
+# Instala dependências do sistema necessárias para compilar extensões do Qwen 3
+RUN apt-get update && apt-get install -y git build-essential && rm -rf /var/lib/apt/lists/*
 
-# Copia e instala as dependências
+# Cache do HuggingFace em local persistente
+ENV HF_HOME="/app/model_cache"
+ENV TRANSFORMERS_CACHE="/app/model_cache"
+
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
+
+# Instalação forçada das versões de 2026 para arquitetura Thinking
+RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
-# --- PRE-DOWNLOAD DO MODELO ---
-# Baixa o Qwen2.5-3B-Instruct agora para não baixar na hora que ligar
+# Instala Flash Attention 2 (O Qwen 3 EXIGE isso para a arquitetura de atenção)
+RUN pip install flash-attn --no-build-isolation
+
+# PRE-DOWNLOAD: Agora com ambiente preparado (git + dependências instaladas)
 RUN python -c "import torch; \
     from transformers import AutoModelForCausalLM, AutoTokenizer; \
     model_id = 'Qwen/Qwen3-4B-Thinking-2507'; \
-    print(f'Baixando {model_id}...'); \
+    print(f'Carregando {model_id}...'); \
     AutoTokenizer.from_pretrained(model_id, trust_remote_code=True); \
-    AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype=torch.float16)"
+    AutoModelForCausalLM.from_pretrained(model_id, trust_remote_code=True, torch_dtype=torch.bfloat16, device_map='cpu')"
 
-# Copia o seu código (mantive o nome sentiment_analysis.py como no seu original)
 COPY sentiment_analysis.py .
 
-# Comando de execução com -u para ver logs em tempo real
 CMD ["python", "-u", "sentiment_analysis.py"]
